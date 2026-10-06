@@ -1,4 +1,4 @@
-import { useStore } from '@nanostores/react';
+﻿import { useStore } from '@nanostores/react';
 import { Octokit } from '@octokit/rest';
 import * as Dialog from '@radix-ui/react-dialog';
 import { motion } from 'framer-motion';
@@ -413,7 +413,7 @@ export function GitHubDeploymentDialog({ isOpen, onClose, projectName, files }: 
         const { data: commitData } = await octokit.git.createCommit({
           owner: connection.user.login,
           repo: sanitizedRepoName,
-          message: !repoExists ? 'Initial commit from Bolt.diy' : 'Update from Bolt.diy',
+          message: !repoExists ? 'Initial commit from HoloStack' : 'Update from HoloStack',
           tree: treeData.sha,
           parents: parentCommitSha ? [parentCommitSha] : [], // Use parent if available
         });
@@ -1046,3 +1046,4 @@ export function GitHubDeploymentDialog({ isOpen, onClose, projectName, files }: 
     </Dialog.Root>
   );
 }
+
