@@ -511,7 +511,7 @@ export class WorkbenchStore {
     });
   }
 
-  updateArtifact({ artifactId }: ArtifactCallbackData, state: Partial<ArtifactUpdateState>) {
+  updateArtifact({ artifactId, messageId }: ArtifactCallbackData, state: Partial<ArtifactUpdateState>) {
     if (!artifactId) {
       return;
     }
@@ -523,6 +523,94 @@ export class WorkbenchStore {
     }
 
     this.artifacts.setKey(artifactId, { ...artifact, ...state });
+
+    /*
+     * HoloStack auto-start: when the artifact closes without a dev-server
+     * action (model stopped early or skipped it), queue npm install + dev
+     * so the preview always boots instead of "No preview available".
+     */
+    if (state.closed) {
+      this.addToExecutionQueue(async () => {
+        await this.#ensurePreviewStarted(artifactId, messageId);
+      });
+    }
+  }
+
+  /*
+   * Boot the dev server when the model didn't emit a start/dev action.
+   * Runs inside the execution queue so it lands after all file/shell actions.
+   */
+  async #ensurePreviewStarted(artifactId: string, messageId: string) {
+    try {
+      const artifact = this.#getArtifact(artifactId);
+
+      if (!artifact) {
+        return;
+      }
+
+      const actions = Object.values(artifact.runner.actions.get());
+      const hasServerAction = actions.some(
+        (a) =>
+          a.type === 'start' ||
+          (a.type === 'shell' && /\b(npm|pnpm|yarn|bun)\b[^|\n]*\b(dev|start|preview|serve)\b/.test(a.content ?? '')),
+      );
+
+      if (hasServerAction) {
+        return;
+      }
+
+      // only boot when a package.json with a dev/start script exists
+      const files = this.files.get();
+      let script: 'dev' | 'start' | null = null;
+
+      for (const [filePath, dirent] of Object.entries(files)) {
+        if (dirent?.type !== 'file' || !filePath.endsWith('package.json')) {
+          continue;
+        }
+
+        try {
+          const pkg = JSON.parse(dirent.content);
+
+          if (pkg?.scripts?.dev) {
+            script = 'dev';
+            break;
+          }
+
+          if (pkg?.scripts?.start) {
+            script = 'start';
+            break;
+          }
+        } catch {
+          // malformed package.json — skip
+        }
+      }
+
+      if (!script) {
+        return;
+      }
+
+      const ids = Object.keys(artifact.runner.actions.get())
+        .map((k) => parseInt(k, 10))
+        .filter((n) => Number.isFinite(n));
+      let nextId = (ids.length ? Math.max(...ids) : -1) + 1;
+
+      const mkAction = (type: 'shell' | 'start', content: string): ActionCallbackData => ({
+        artifactId,
+        messageId,
+        actionId: String(nextId++),
+        action: { type, content },
+      });
+
+      const install = mkAction('shell', 'npm install --no-audit --no-fund');
+      const start = mkAction('start', `npm run ${script}`);
+
+      await this._addAction(install);
+      await this._runAction(install);
+      await this._addAction(start);
+      await this._runAction(start);
+    } catch (error) {
+      console.warn('[HoloStack] auto-start do preview falhou:', error);
+    }
   }
   addAction(data: ActionCallbackData) {
     // this._addAction(data);
