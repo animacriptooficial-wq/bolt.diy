@@ -1,4 +1,4 @@
-import { createOpenAI } from '@ai-sdk/openai';
+﻿import { createOpenAI } from '@ai-sdk/openai';
 import type { LanguageModelV1 } from 'ai';
 import { BaseProvider } from '~/lib/modules/llm/base-provider';
 import type { ModelInfo } from '~/lib/modules/llm/types';
@@ -13,13 +13,13 @@ export default class OpenAIProvider extends BaseProvider {
   };
 
   staticModels: ModelInfo[] = [
-    // GPT-5.6 Luna: flagship OpenAI model for HoloStack (maps to gpt-4o-2024-08-06)
+    // GPT-5.6 Luna: flagship OpenAI model, pinned first in the selector
     {
-      name: 'gpt-4o-2024-08-06',
+      name: 'gpt-5.6-luna',
       label: 'GPT-5.6 Luna',
       provider: 'OpenAI',
-      maxTokenAllowed: 128000,
-      maxCompletionTokens: 16384,
+      maxTokenAllowed: 1000000,
+      maxCompletionTokens: 128000,
     },
 
     /*
