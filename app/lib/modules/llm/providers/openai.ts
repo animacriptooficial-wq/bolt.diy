@@ -13,6 +13,15 @@ export default class OpenAIProvider extends BaseProvider {
   };
 
   staticModels: ModelInfo[] = [
+    // GPT-5.6 Luna: flagship OpenAI model for HoloStack (maps to gpt-4o-2024-08-06)
+    {
+      name: 'gpt-4o-2024-08-06',
+      label: 'GPT-5.6 Luna',
+      provider: 'OpenAI',
+      maxTokenAllowed: 128000,
+      maxCompletionTokens: 16384,
+    },
+
     /*
      * Essential fallback models - only the most stable/reliable ones
      * GPT-4o: 128k context, 4k standard output (64k with long output mode)
