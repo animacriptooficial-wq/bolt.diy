@@ -13,10 +13,17 @@ export default class OpenAIProvider extends BaseProvider {
   };
 
   staticModels: ModelInfo[] = [
-    // GPT-5.6 Luna: flagship OpenAI model, pinned first in the selector
+    // Luna flagship models — pinned first in the selector
     {
       name: 'gpt-5.6-luna',
       label: 'GPT-5.6 Luna',
+      provider: 'OpenAI',
+      maxTokenAllowed: 1000000,
+      maxCompletionTokens: 128000,
+    },
+    {
+      name: 'gpt-6-luna',
+      label: 'GPT-6 Luna',
       provider: 'OpenAI',
       maxTokenAllowed: 1000000,
       maxCompletionTokens: 128000,
@@ -111,6 +118,10 @@ export default class OpenAIProvider extends BaseProvider {
 
       // Determine completion token limits based on model type (accurate 2025 limits)
       let maxCompletionTokens = 4096; // default for most models
+
+      if (m.id?.includes('luna') || /gpt-[56]/.test(m.id)) {
+        maxCompletionTokens = 128000; // Luna/GPT-5/GPT-6 class: max output
+      }
 
       if (m.id?.startsWith('o1-preview')) {
         maxCompletionTokens = 32000; // o1-preview: 32K output limit
